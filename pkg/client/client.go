@@ -9,6 +9,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/beeper/faye-client/pkg/message"
+	"github.com/beeper/faye-client/pkg/messages"
 	"github.com/beeper/faye-client/pkg/transport"
 )
 
@@ -23,6 +24,8 @@ type Client struct {
 
 	websocketsSupported bool
 	websocketTransport  *transport.WebsocketTransport
+
+	subscriptions *Subscriptions
 }
 
 func NewClient(url *url.URL, log *zerolog.Logger) *Client {
@@ -32,6 +35,8 @@ func NewClient(url *url.URL, log *zerolog.Logger) *Client {
 
 		longPollingTransport: transport.NewLongPollingTransport(url),
 		websocketTransport:   transport.NewWebsocketTransport(url),
+
+		subscriptions: NewSubscriptions(),
 	}
 }
 
@@ -39,7 +44,7 @@ func (c *Client) Handshake(ctx context.Context) error {
 	log := c.log.With().Str("method", "Handshake").Logger()
 	ctx = log.WithContext(ctx)
 
-	messages, err := c.longPollingTransport.Send(ctx, message.NewHandshakeMessage())
+	messages, err := c.longPollingTransport.Send(ctx, messages.NewHandshakeMessage())
 	if err != nil {
 		return err
 	}
@@ -74,4 +79,33 @@ func (c *Client) handleAdvice(advice *message.Advice) {
 	if advice != nil {
 		c.advice = advice
 	}
+}
+
+func (c *Client) Subscribe(ctx context.Context, channel string, callback func(*message.Message)) error {
+	log := c.log.With().Str("method", "Subscribe").Logger()
+	ctx = log.WithContext(ctx)
+
+	messages, err := c.longPollingTransport.Send(ctx, messages.NewSubscribeMessage(c.clientID, channel))
+	if err != nil {
+		return err
+	}
+
+	if len(messages) != 1 {
+		return fmt.Errorf("expected 1 message, got %d", len(messages))
+	}
+
+	msg := messages[0]
+
+	if msg.Channel != "/meta/subscribe" {
+		return fmt.Errorf("unexpected message with channel %s", msg.Channel)
+	}
+
+	if !msg.Successful {
+		return fmt.Errorf("subscribe failed with error: %v", msg.Error)
+	}
+
+	c.handleAdvice(msg.Advice)
+
+	c.subscriptions.Add(channel, callback)
+	return nil
 }

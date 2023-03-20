@@ -32,6 +32,13 @@ func (e *Error) UnmarshalJSON(b []byte) (err error) {
 }
 
 func (e *Error) MarshalJSON() ([]byte, error) {
-	args := strings.Join(e.ErrorArgs, ",")
-	return []byte(fmt.Sprintf(`"%d:%s:%s"`, e.ErrorCode, args, e.ErrorMessage)), nil
+	return []byte(fmt.Sprintf(`"%s"`, e.String())), nil
+}
+
+func (e *Error) String() string {
+	return fmt.Sprintf("%d:%s:%s", e.ErrorCode, strings.Join(e.ErrorArgs, ","), e.ErrorMessage)
+}
+
+func (e *Error) Error() string {
+	return e.String()
 }

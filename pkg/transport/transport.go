@@ -1,7 +1,11 @@
 package transport
 
-import "encoding/json"
+import (
+	"context"
+
+	"github.com/beeper/faye-client/pkg/message"
+)
 
 type Transport interface {
-	Send(json.Marshaler) (json.Unmarshaler, error)
+	Send(ctx context.Context, msg *message.Message) ([]*message.Message, error)
 }
