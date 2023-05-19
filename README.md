@@ -1,5 +1,7 @@
 # Faye Client
 
+[![Go Test](https://github.com/beeper/faye-client/actions/workflows/go.yml/badge.svg)](https://github.com/beeper/faye-client/actions/workflows/go.yml)
+
 A [Faye](https://faye.jcoglan.com/) client for Go that supports long-polling
 and websockets.
 
