@@ -77,15 +77,16 @@ func (c *Client) Handshake(ctx context.Context) error {
 
 func (c *Client) handleAdvice(advice *message.Advice) {
 	if advice != nil {
+		c.log.Debug().Interface("advice", advice).Msg("received advice")
 		c.advice = advice
 	}
 }
 
-func (c *Client) Subscribe(ctx context.Context, channel string, callback func(*message.Message)) error {
+func (c *Client) SubscribeWithExt(ctx context.Context, channel string, ext map[string]any, callback func(*message.Message)) error {
 	log := c.log.With().Str("method", "Subscribe").Logger()
 	ctx = log.WithContext(ctx)
 
-	messages, err := c.longPollingTransport.Send(ctx, messages.NewSubscribeMessage(c.clientID, channel))
+	messages, err := c.longPollingTransport.Send(ctx, messages.NewSubscribeMessageWithExt(c.clientID, channel, ext))
 	if err != nil {
 		return err
 	}

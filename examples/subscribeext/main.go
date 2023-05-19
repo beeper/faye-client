@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 3 {
+	if len(os.Args) < 4 {
 		log.Fatal().Msg("missing url or channel")
 	}
 
@@ -31,7 +31,9 @@ func main() {
 
 	log.Info().Msg("subscribing to channel")
 	channel := os.Args[2]
-	err = c.Subscribe(context.TODO(), channel, func(m *message.Message) {
+	err = c.SubscribeWithExt(context.TODO(), channel, map[string]any{
+		"access_token": os.Args[3],
+	}, func(m *message.Message) {
 		log.Info().Interface("msg", m).Msg("received message")
 	})
 	if err != nil {
